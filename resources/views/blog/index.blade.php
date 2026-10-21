@@ -24,6 +24,20 @@
 
     <div class="card shadow-sm border-0">
         <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <form method="GET" action="{{ route('blogs.index') }}" class="d-flex align-items-center gap-2">
+                    <label for="per_page" class="mb-0 text-muted">Show</label>
+                    <select name="per_page" id="per_page" class="form-select form-select-sm w-auto"
+                        onchange="this.form.submit()">
+                        @foreach([10, 25, 50, 100] as $size)
+                            <option value="{{ $size }}" {{ $perPage == $size ? 'selected' : '' }}>
+                                {{ $size }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <span class="text-muted">entries</span>
+                </form>
+            </div>
             <div class="table-responsive">
                 <table class="table table-bordered table-hover align-middle">
                     <thead class="table-light">
@@ -39,9 +53,7 @@
                     <tbody>
                         @forelse($blogs as $blog)
                             <tr>
-                                <td>
-                                    {{ $blog->id }}
-                                </td>
+                                <td>{{ $blogs->firstItem() + $loop->index }}</td>
                                 <td>
                                     <strong>
                                         {{ $blog->title }}
@@ -111,6 +123,17 @@
                     </tbody>
                 </table>
             </div>
+            @if($blogs->total() > 0)
+                <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                    <div class="text-muted small">
+                        Showing {{ $blogs->firstItem() }} to {{ $blogs->lastItem() }}
+                        of {{ $blogs->total() }} entries
+                    </div>
+                    <div>
+                        {{ $blogs->links('pagination::bootstrap-5') }}
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>

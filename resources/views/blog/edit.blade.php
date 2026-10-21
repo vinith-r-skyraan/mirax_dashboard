@@ -89,23 +89,50 @@
                 </div>
 
                 <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body">
-                        <h5 class="mb-4">
-                            Featured Image
-                        </h5>
-                        @if($blog->featured_image)
-                            <div class="mb-3">
-                                <img src="{{ asset(str_replace('../', '', $blog->featured_image)) }}"
-                                    alt="{{ $blog->title }}" class="img-fluid rounded" style="max-height: 200px;">
-                            </div>
-                        @endif
-                        <input type="file" name="featured_image" class="form-control"
-                            accept="image/jpeg,image/png,image/webp">
-                        <small class="text-muted">
-                            Leave empty to keep the current image.
-                        </small>
+                <div class="card-body">
+                    <h5 class="mb-4">Featured Image</h5>
+
+                    {{-- Current image --}}
+                    @if($blog->featured_image)
+                        <div id="current-image-wrapper" class="mb-3 position-relative">
+                            <img src="{{ asset('images/blogs/' . basename($blog->featured_image)) }}"
+                                alt="{{ $blog->title }}" class="img-fluid rounded border"
+                                style="max-height: 220px; width: 100%; object-fit: cover;">
+                            <button type="button" id="remove-current-image"
+                                class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2">
+                                ✕ Remove
+                            </button>
+                        </div>
+                    @endif
+
+                    {{-- 1 = current image delete pannanum --}}
+                    <input type="hidden" name="remove_featured_image" id="remove_featured_image" value="0">
+
+                    <input type="file" name="featured_image" id="featured_image"
+                        class="form-control @error('featured_image') is-invalid @enderror"
+                        accept="image/jpeg,image/png,image/webp">
+
+                    @error('featured_image')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+
+                    <div id="image-error" class="text-danger small mt-2 d-none"></div>
+
+                    <small class="text-muted d-block mt-2">
+                        JPG, JPEG, PNG or WEBP. Maximum 2MB. Leave empty to keep the current image.
+                    </small>
+
+                    {{-- New image preview --}}
+                    <div id="image-preview-wrapper" class="mt-3 d-none position-relative">
+                        <img id="image-preview" src="" alt="Preview" class="img-fluid rounded border"
+                            style="max-height: 220px; width: 100%; object-fit: cover;">
+                        <button type="button" id="remove-new-image"
+                            class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2">
+                            ✕ Remove
+                        </button>
                     </div>
                 </div>
+            </div>
                 <div class="card shadow-sm border-0">
                     <div class="card-body">
                         <h5 class="mb-4">
@@ -135,8 +162,80 @@
 <script>
     ClassicEditor
         .create(document.querySelector('#blog-content'))
-        .catch(error => {
-            console.error(error);
+        .catch(error => console.error(error));
+
+    const imageInput     = document.getElementById('featured_image');
+    const imageError     = document.getElementById('image-error');
+    const previewWrap    = document.getElementById('image-preview-wrapper');
+    const previewImg     = document.getElementById('image-preview');
+    const removeNewBtn   = document.getElementById('remove-new-image');
+    const currentWrap    = document.getElementById('current-image-wrapper');
+    const removeCurBtn   = document.getElementById('remove-current-image');
+    const removeFlag     = document.getElementById('remove_featured_image');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize      = 2 * 1024 * 1024;
+
+    function showError(msg) {
+        imageError.textContent = msg;
+        imageError.classList.remove('d-none');
+        imageInput.classList.add('is-invalid');
+    }
+
+    function clearError() {
+        imageError.textContent = '';
+        imageError.classList.add('d-none');
+        imageInput.classList.remove('is-invalid');
+    }
+
+    function resetNewImage() {
+        imageInput.value = '';
+        previewImg.src = '';
+        previewWrap.classList.add('d-none');
+    }
+
+    // Current image remove
+    if (removeCurBtn) {
+        removeCurBtn.addEventListener('click', function () {
+            currentWrap.classList.add('d-none');
+            removeFlag.value = '1';
         });
+    }
+
+    // New image select
+    imageInput.addEventListener('change', function () {
+        clearError();
+        const file = this.files[0];
+
+        if (!file) {
+            resetNewImage();
+            return;
+        }
+
+        if (!allowedTypes.includes(file.type)) {
+            showError('Only JPG, JPEG, PNG or WEBP images are allowed.');
+            resetNewImage();
+            return;
+        }
+
+        if (file.size > maxSize) {
+            showError('Image size must not exceed 2MB.');
+            resetNewImage();
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            previewImg.src = e.target.result;
+            previewWrap.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // New image remove
+    removeNewBtn.addEventListener('click', function () {
+        resetNewImage();
+        clearError();
+    });
 </script>
 @endsection
